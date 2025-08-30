@@ -12,7 +12,7 @@ namespace At.Luki0606.FleduSnack.Server
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
             AddDbContext(builder);
 
@@ -21,12 +21,19 @@ namespace At.Luki0606.FleduSnack.Server
                 .AddInteractiveServerComponents()
                 .AddInteractiveWebAssemblyComponents();
 
+            // Add Controllers
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseWebAssemblyDebugging();
+                app.UseSwagger();
+                app.UseSwaggerUI();
             }
             else
             {
@@ -36,9 +43,10 @@ namespace At.Luki0606.FleduSnack.Server
             }
 
             app.UseHttpsRedirection();
-
             app.UseStaticFiles();
             app.UseAntiforgery();
+
+            app.MapControllers();
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode()
