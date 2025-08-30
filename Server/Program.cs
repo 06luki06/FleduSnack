@@ -1,5 +1,8 @@
 using At.Luki0606.FleduSnack.Server.Components;
+using At.Luki0606.FleduSnack.Server.Data;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -10,6 +13,8 @@ namespace At.Luki0606.FleduSnack.Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            AddDbContext(builder);
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -41,6 +46,12 @@ namespace At.Luki0606.FleduSnack.Server
                 .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
             app.Run();
+        }
+
+        private static void AddDbContext(WebApplicationBuilder builder)
+        {
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
         }
     }
 }

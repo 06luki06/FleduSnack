@@ -1,4 +1,7 @@
 {
+  "ConnectionStrings": {
+    "Default": "Host=HOST;Port=PORT;Database=DB;Username=DB-NAME;Password=PWD"
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
