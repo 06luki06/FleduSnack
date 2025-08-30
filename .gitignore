@@ -56,4 +56,3 @@ nunit-*.xml
 .env
 .vs/
 *.user
-**/appsettings.json

@@ -1,0 +1,176 @@
+﻿@page "/"
+@page "/cats"
+
+@using At.luki0606.FleduSnack.Shared.DTOs.Requests
+@using At.luki0606.FleduSnack.Shared.DTOs.Responses
+@using At.luki0606.FleduSnack.Shared.Models
+@inject HttpClient Http
+
+<h3 class="mb-3">🐱 FleduSnack 🐱</h3>
+
+<div class="mb-3">
+    <button class="btn btn-success" @onclick="ShowAddForm">
+        <i class="bi bi-plus-circle"></i> Add Cat
+    </button>
+</div>
+
+@if (showAddForm)
+{
+    <div class="card mb-4 p-3 bg-light">
+        <h5>Add a new cat</h5>
+        <div class="input-group mb-2">
+            <input class="form-control" placeholder="Cat name" @bind="newCatName" />
+            <button class="btn btn-primary" @onclick="AddCat">Save</button>
+            <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
+        </div>
+    </div>
+}
+
+
+@if (cats is null)
+{
+    <div class="alert alert-info">Loading cats...</div>
+}
+else if (cats.Count == 0)
+{
+    <div class="alert alert-warning">No cats found.</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var cat in cats)
+        {
+            <div class="col">
+                <div class="card ">
+                    <div class="card-body">
+                        @if (editCatId == cat.Id)
+                        {
+                            <!-- Edit Form -->
+                            <h5>Edit cat</h5>
+                            <div class="input-group mb-2">
+                                <input class="form-control" @bind="editCatName" />
+                                <button class="btn btn-primary btn-sm" @onclick="() => SaveEdit(cat.Id)">Save</button>
+                                <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Normal View -->
+                            <h5 class="card-title">@cat.Name</h5>
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-primary btn-sm" @onclick="() => StartEdit(cat)">Edit</button>
+                                <button class="btn btn-danger btn-sm" @onclick="async () => await DeleteCat(cat.Id)">Delete</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private List<CatResponseDto>? cats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCats();
+    }
+
+    private async Task LoadCats()
+    {
+        try
+        {
+            cats = await Http.GetFromJsonAsync<List<CatResponseDto>>("api/cats");
+        }
+        catch (Exception ex)
+        {
+            await Console.Error.WriteLineAsync($"Error while loading cats: {ex.Message}");
+            cats = new();
+        }
+    }
+
+    #region Add
+    private bool showAddForm = false;
+    private string newCatName = string.Empty;
+
+    private void ShowAddForm()
+    {
+        newCatName = string.Empty;
+        showAddForm = true;
+    }
+
+    private async Task AddCat()
+    {
+        if (string.IsNullOrWhiteSpace(newCatName))
+            return;
+
+        CatRequestDto request = new CatRequestDto() { Name = newCatName };
+        HttpResponseMessage response = await Http.PostAsJsonAsync("api/cats", request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            showAddForm = false;
+            await LoadCats();
+        }
+        else
+        {
+            await Console.Error.WriteLineAsync($"Failed to add cat: {response.StatusCode}");
+        }
+    }
+    #endregion
+
+    #region Edit
+    private Guid? editCatId = null;
+    private string editCatName = string.Empty;
+
+    private void StartEdit(CatResponseDto cat)
+    {
+        editCatId = cat.Id;
+        editCatName = cat.Name;
+    }
+
+    private void CancelEdit()
+    {
+        editCatId = null;
+        editCatName = string.Empty;
+    }
+
+    private async Task SaveEdit(Guid id)
+    {
+        if (string.IsNullOrWhiteSpace(editCatName))
+        {
+            return;
+        }
+
+        CatRequestDto request = new CatRequestDto(){Name = editCatName};
+        HttpResponseMessage response = await Http.PutAsJsonAsync($"api/cats/{id}", request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            editCatId = null;
+            await LoadCats();
+        }
+        else
+        {
+            await Console.Error.WriteLineAsync($"Failed to update cat {id}: {response.StatusCode}");
+        }
+    }
+    #endregion
+
+    #region Delete
+    private async Task DeleteCat(Guid id)
+    {
+        HttpResponseMessage response = await Http.DeleteAsync($"api/cats/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadCats(); // refresh list
+        }
+        else
+        {
+            await Console.Error.WriteLineAsync($"Failed to delete cat {id}: {response.StatusCode}");
+        }
+    }
+    #endregion
+}

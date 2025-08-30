@@ -1,6 +1,10 @@
-﻿<Router AppAssembly="typeof(At.Luki0606.FleduSnack.Server.Program).Assembly" AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
+﻿<Router AppAssembly="@typeof(App).Assembly"
+        AdditionalAssemblies="new[] { typeof(Client._Imports).Assembly }">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        <RouteView RouteData="@routeData" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <p>404 - Not Found</p>
+    </NotFound>
 </Router>
