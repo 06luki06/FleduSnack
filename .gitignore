@@ -56,3 +56,4 @@ nunit-*.xml
 .env
 .vs/
 *.user
+Server/wwwroot/uploads/

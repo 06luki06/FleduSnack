@@ -26,7 +26,7 @@ namespace At.luki0606.FleduSnack.Shared.Models
 
         public DishResponseDto ToResponseDto()
         {
-            return new(Id, Brand, Flavor, Tasting);
+            return new(Id, Brand, Flavor, Tasting, PhotoPath);
         }
     }
 }

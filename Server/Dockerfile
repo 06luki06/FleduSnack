@@ -21,6 +21,10 @@ RUN dotnet publish "Server.csproj" -c Release -o /app/publish /p:UseAppHost=fals
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
+# Create uploads directory with write permissions
+RUN mkdir -p /app/wwwroot/uploads \
+    && chmod -R 777 /app/wwwroot/uploads
+
 # Add non-root user and give ownership of /app
 RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
@@ -29,6 +33,5 @@ COPY --from=build /app/publish .
 
 # Port
 EXPOSE 8080
-ENV ASPNETCORE_URLS=http://+:8080
 
 ENTRYPOINT ["dotnet", "Server.dll"]

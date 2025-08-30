@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using At.Luki0606.FleduSnack.Server.Components;
 using At.Luki0606.FleduSnack.Server.Data;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 namespace At.Luki0606.FleduSnack.Server
@@ -53,7 +55,14 @@ namespace At.Luki0606.FleduSnack.Server
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads")),
+                RequestPath = "/uploads"
+            });
+
             app.UseAntiforgery();
 
             app.MapControllers();

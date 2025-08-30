@@ -2,6 +2,7 @@
 @using At.luki0606.FleduSnack.Shared.DTOs.Responses
 @using At.luki0606.FleduSnack.Shared.DTOs.Requests
 @using At.luki0606.FleduSnack.Shared.Enums
+@using System.IO
 @inject HttpClient Http
 
 <h3 class="mb-3">🍽️ Dishes for @cat?.Name</h3>
@@ -35,6 +36,13 @@ else
                     <option value="Mid">Mid</option>
                     <option value="High">High</option>
                 </select>
+
+                <InputFile OnChange="OnAddImageSelected" class="form-control mb-2" />
+                @if (newDishImage is not null)
+                {
+                    <p>Selected: @newDishImage.Name</p>
+                }
+
                 <button class="btn btn-primary me-2" @onclick="AddDish">Save</button>
                 <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
             </div>
@@ -69,6 +77,12 @@ else
                                 <option value="Mid">Mid</option>
                                 <option value="High">High</option>
                             </select>
+
+                            <InputFile OnChange="OnEditImageSelected" class="form-control mb-2" />
+                            @if (editDishImage is not null)
+                            {
+                                <p>Selected: @editDishImage.Name</p>
+                            }
                         </div>
                         <button class="btn btn-primary btn-sm me-2" @onclick="() => SaveEdit(dish.Id)">Save</button>
                         <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
@@ -80,6 +94,10 @@ else
                             <span>
                                 <strong>@dish.Brand</strong> – @dish.Flavor
                             </span>
+                            @if (!string.IsNullOrEmpty(dish.ImageUrl))
+                            {
+                                <img src="@dish.ImageUrl" class="img-thumbnail me-2" style="max-height:100px;" />
+                            }
                             <div>
                                 <span class="badge bg-secondary me-2">@dish.Tasting</span>
                                 <button class="btn btn-primary btn-sm me-1" @onclick="() => StartEdit(dish)">Edit</button>
@@ -124,6 +142,12 @@ else
     private string newDishBrand = string.Empty;
     private string newDishFlavor = string.Empty;
     private Tasting newDishTasting = Tasting.NotReviewed;
+    private IBrowserFile? newDishImage;
+
+    private void OnAddImageSelected(InputFileChangeEventArgs e)
+    {
+        newDishImage = e.File;
+    }
 
     private void ShowAddForm()
     {
@@ -140,11 +164,22 @@ else
             return;
         }
 
-        DishRequestDto request = new DishRequestDto(newDishBrand, newDishFlavor, newDishTasting);
-        HttpResponseMessage response = await Http.PostAsJsonAsync($"api/cats/{CatId}/dishes", request);
+        using MultipartFormDataContent content = new MultipartFormDataContent();
+        content.Add(new StringContent(newDishBrand), "Brand");
+        content.Add(new StringContent(newDishFlavor), "Flavor");
+        content.Add(new StringContent(newDishTasting.ToString()), "Tasting");
+
+        if (newDishImage is not null)
+        {
+            Stream stream = newDishImage.OpenReadStream(5 * 1024 * 1024); // max 5MB
+            content.Add(new StreamContent(stream), "Image", newDishImage.Name);
+        }
+
+        HttpResponseMessage response = await Http.PostAsync($"api/cats/{CatId}/dishes", content);
 
         if (response.IsSuccessStatusCode)
         {
+            newDishImage = null;
             showAddForm = false;
             await LoadData();
         }
@@ -160,6 +195,12 @@ else
     private string editDishBrand = string.Empty;
     private string editDishFlavor = string.Empty;
     private Tasting editDishTasting = Tasting.NotReviewed;
+    private IBrowserFile? editDishImage;
+
+    private void OnEditImageSelected(InputFileChangeEventArgs e)
+    {
+        editDishImage = e.File;
+    }
 
     private void StartEdit(DishResponseDto dish)
     {
@@ -176,11 +217,22 @@ else
 
     private async Task SaveEdit(Guid id)
     {
-        DishRequestDto request = new DishRequestDto(editDishBrand, editDishFlavor, editDishTasting);
-        HttpResponseMessage response = await Http.PutAsJsonAsync($"api/cats/{CatId}/dishes/{id}", request);
+        using MultipartFormDataContent content = new MultipartFormDataContent();
+        content.Add(new StringContent(editDishBrand), "Brand");
+        content.Add(new StringContent(editDishFlavor), "Flavor");
+        content.Add(new StringContent(editDishTasting.ToString()), "Tasting");
+
+        if (editDishImage is not null)
+        {
+            Stream stream = editDishImage.OpenReadStream(5 * 1024 * 1024);
+            content.Add(new StreamContent(stream), "Image", editDishImage.Name);
+        }
+
+        HttpResponseMessage response = await Http.PutAsync($"api/cats/{CatId}/dishes/{id}", content);
 
         if (response.IsSuccessStatusCode)
         {
+            editDishImage = null;
             editDishId = null;
             await LoadData();
         }

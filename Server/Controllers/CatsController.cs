@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using At.luki0606.FleduSnack.Shared.DTOs.Requests;
 using At.luki0606.FleduSnack.Shared.DTOs.Responses;
 using At.luki0606.FleduSnack.Shared.Models;
 using At.Luki0606.FleduSnack.Server.Data;
+using At.Luki0606.FleduSnack.Server.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -93,7 +95,7 @@ namespace At.Luki0606.FleduSnack.Server.Controllers
         }
 
         [HttpPost("{catId:guid}/dishes")]
-        public async Task<ActionResult<DishResponseDto>> CreateDishForCat(Guid catId, DishRequestDto dish)
+        public async Task<ActionResult<DishResponseDto>> CreateDishForCat(Guid catId, [FromForm] DishImageDto dish)
         {
             Cat? cat = await _db.Cats.FindAsync(catId);
             if (cat is null)
@@ -101,12 +103,28 @@ namespace At.Luki0606.FleduSnack.Server.Controllers
                 return NotFound();
             }
 
+            string? imagePath = null;
+            if (dish.Image is not null)
+            {
+                string uploadsFolder = Path.Combine("wwwroot", "uploads");
+                Directory.CreateDirectory(uploadsFolder);
+
+                string fileName = $"{Guid.NewGuid()}{Path.GetExtension(dish.Image.FileName)}";
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using FileStream stream = new(filePath, FileMode.Create);
+                await dish.Image.CopyToAsync(stream);
+
+                imagePath = $"/uploads/{fileName}";
+            }
+
             Dish newDish = new()
             {
                 Brand = dish.Brand,
                 Flavor = dish.Flavor,
                 Tasting = dish.Tasting,
-                CatId = cat.Id
+                CatId = cat.Id,
+                PhotoPath = imagePath
             };
 
             _db.Dishes.Add(newDish);
@@ -133,7 +151,7 @@ namespace At.Luki0606.FleduSnack.Server.Controllers
         }
 
         [HttpPut("{catId:guid}/dishes/{dishId:guid}")]
-        public async Task<IActionResult> UpdateDishForCat(Guid catId, Guid dishId, DishRequestDto dish)
+        public async Task<IActionResult> UpdateDishForCat(Guid catId, Guid dishId, DishImageDto dish)
         {
             Dish? existingDish = await _db.Dishes.FirstOrDefaultAsync(d => d.Id == dishId && d.CatId == catId);
 
@@ -144,6 +162,21 @@ namespace At.Luki0606.FleduSnack.Server.Controllers
             existingDish.Brand = dish.Brand;
             existingDish.Flavor = dish.Flavor;
             existingDish.Tasting = dish.Tasting;
+
+            if (dish.Image is not null)
+            {
+                string uploadsFolder = Path.Combine("wwwroot", "uploads");
+                Directory.CreateDirectory(uploadsFolder);
+
+                string fileName = $"{Guid.NewGuid()}{Path.GetExtension(dish.Image.FileName)}";
+                string filePath = Path.Combine(uploadsFolder, fileName);
+
+                using FileStream stream = new(filePath, FileMode.Create);
+                await dish.Image.CopyToAsync(stream);
+
+                existingDish.PhotoPath = $"/uploads/{fileName}";
+            }
+
             await _db.SaveChangesAsync();
             return NoContent();
         }
