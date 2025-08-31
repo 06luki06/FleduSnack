@@ -5,71 +5,89 @@
 @using At.luki0606.FleduSnack.Shared.DTOs.Responses
 @using At.luki0606.FleduSnack.Shared.Models
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
-<h3 class="mb-3">🐱 FleduSnack 🐱</h3>
+<h3 class="text-center my-4">🐱 FleduSnack 🐱</h3>
 
-<div class="mb-3">
-    <button class="btn btn-success" @onclick="ShowAddForm">
-        <i class="bi bi-plus-circle"></i> Add Cat
-    </button>
+<div class="text-center mb-4">
+    <Button Color="ButtonColor.Success" @onclick="ShowAddForm">
+        <Icon Name="IconName.PlusCircle" /> Add Cat
+    </Button>
 </div>
 
 @if (showAddForm)
 {
-    <div class="card mb-4 p-3 bg-light">
-        <h5>Add a new cat</h5>
-        <div class="input-group mb-2">
-            <input class="form-control" placeholder="Cat name" @bind="newCatName" />
-            <button class="btn btn-primary" @onclick="AddCat">Save</button>
-            <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
+    <div class="d-flex justify-content-center mb-4">
+        <div class="list-group w-75">
+            <div class="list-group-item d-flex align-items-center">
+                <div class="flex-grow-1 me-3">
+                    <InputText class="form-control" placeholder="Cat name" @bind-Value="newCatName" />
+                </div>
+                <div class="btn-group">
+                    <Button Color="ButtonColor.Success" Size="ButtonSize.Small" @onclick="AddCat">
+                        <Icon Name="IconName.CheckLg" /> Add
+                    </Button>
+                    <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="() => showAddForm = false">
+                        <Icon Name="IconName.XLg" /> Cancel
+                    </Button>
+                </div>
+            </div>
         </div>
     </div>
 }
 
-
 @if (cats is null)
 {
-    <div class="alert alert-info">Loading cats...</div>
+    <Alert Color="AlertColor.Info">Loading cats...</Alert>
 }
 else if (cats.Count == 0)
 {
-    <div class="alert alert-warning">No cats found.</div>
+    <Alert Color="AlertColor.Warning">No cats found.</Alert>
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        @foreach (var cat in cats)
-        {
-            <div class="col">
-                <div class="card ">
-                    <div class="card-body">
-                        @if (editCatId == cat.Id)
-                        {
-                            <!-- Edit Form -->
-                            <h5>Edit cat</h5>
-                            <div class="input-group mb-2">
-                                <input class="form-control" @bind="editCatName" />
-                                <button class="btn btn-primary btn-sm" @onclick="() => SaveEdit(cat.Id)">Save</button>
-                                <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
-                            </div>
-                        }
-                        else
-                        {
-                            <!-- Normal View -->
-                            <h5 class="card-title">@cat.Name</h5>
-                            <div class="d-flex justify-content-between">
-                                <button class="btn btn-primary btn-sm" @onclick="() => StartEdit(cat)">Edit</button>
-                                <a class="btn btn-info btn-sm" href="/cats/@cat.Id/dishes">View Dishes</a>
-                                <button class="btn btn-danger btn-sm" @onclick="async () => await DeleteCat(cat.Id)">Delete</button>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        }
+    <!-- Cats Grid -->
+    <div class="d-flex justify-content-center">
+        <ul class="list-group w-75">
+            @foreach (var cat in cats)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @if (editCatId == cat.Id)
+                    {
+                        <!-- Edit Mode -->
+                        <div class="flex-grow-1 me-3">
+                            <InputText class="form-control" @bind-Value="editCatName" />
+                        </div>
+                        <div class="btn-group">
+                            <Button Color="ButtonColor.Success" Size="ButtonSize.Small" @onclick="() => SaveEdit(cat.Id)">
+                                <Icon Name="IconName.CheckLg" /> Save
+                            </Button>
+                            <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="CancelEdit">
+                                <Icon Name="IconName.XLg" /> Cancel
+                            </Button>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Normal View -->
+                        <span class="fw-bold">@cat.Name</span>
+                        <div class="btn-group">
+                            <Button Color="ButtonColor.Primary" Size="ButtonSize.Small" @onclick="() => StartEdit(cat)">
+                                <Icon Name="IconName.PencilSquare" /> Edit
+                            </Button>
+                            <Button Color="ButtonColor.Info" Size="ButtonSize.Small" @onclick="() => NavigateToDishes(cat.Id)">
+                                <Icon Name="IconName.ArrowRightCircle" /> Dishes
+                            </Button>
+                            <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="async () => await DeleteCat(cat.Id)">
+                                <Icon Name="IconName.Trash" /> Delete
+                            </Button>
+                        </div>
+                    }
+                </li>
+            }
+        </ul>
     </div>
 }
-
 
 @code {
     #region General
@@ -94,6 +112,13 @@ else
     }
     #endregion
 
+    #region Navigation
+    private void NavigateToDishes(Guid catId)
+    {
+        Navigation?.NavigateTo($"/cats/{catId}/dishes");
+    }
+    #endregion
+
     #region Add
     private bool showAddForm = false;
     private string newCatName = string.Empty;
@@ -107,7 +132,9 @@ else
     private async Task AddCat()
     {
         if (string.IsNullOrWhiteSpace(newCatName))
+        {
             return;
+        }
 
         CatRequestDto request = new CatRequestDto(newCatName);
         HttpResponseMessage response = await Http.PostAsJsonAsync("api/cats", request);

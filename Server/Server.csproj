@@ -10,6 +10,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\Client\Client.csproj" />
 		<PackageReference Include="Blazor.Bootstrap" Version="3.4.0" />
+		<PackageReference Include="BootstrapBlazor.BootstrapIcon" Version="9.0.2" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.18" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
 		<ProjectReference Include="..\Shared\Shared.csproj" />
@@ -21,6 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="wwwroot\css\" />
 	  <Folder Include="wwwroot\uploads\" />
 	</ItemGroup>
 

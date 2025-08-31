@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using At.Luki0606.FleduSnack.Server.Components;
 using At.Luki0606.FleduSnack.Server.Data;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 namespace At.Luki0606.FleduSnack.Server
@@ -47,21 +45,9 @@ namespace At.Luki0606.FleduSnack.Server
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            else
-            {
-                app.UseExceptionHandler("/Error", createScopeForErrors: true);
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
 
             app.UseHttpsRedirection();
-
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(
-                    Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads")),
-                RequestPath = "/uploads"
-            });
+            app.UseStaticFiles();
 
             app.UseAntiforgery();
 

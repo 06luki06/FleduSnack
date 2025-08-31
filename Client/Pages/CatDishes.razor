@@ -4,111 +4,159 @@
 @using At.luki0606.FleduSnack.Shared.Enums
 @using System.IO
 @inject HttpClient Http
+@inject NavigationManager Navigation
 
-<h3 class="mb-3">🍽️ Dishes for @cat?.Name</h3>
+<h3 class="text-center mb-3">🍽️ Dishes for @cat?.Name 🍽️</h3>
 
 @if (cat is null)
 {
-    <div class="alert alert-info">Loading cat...</div>
+    <Alert Color="AlertColor.Info">Loading cat...</Alert>
 }
 else
 {
     <!-- Add Dish Button -->
-    <div class="mb-3">
-        <button class="btn btn-success" @onclick="ShowAddForm">
-            <i class="bi bi-plus-circle"></i> Add Dish
-        </button>
+    <div class="d-flex justify-content-center mb-3">
+        <Button Color="ButtonColor.Success" @onclick="ShowAddForm">
+            <Icon Name="IconName.PlusCircle" /> Add Dish
+        </Button>
     </div>
-
-    <a class="btn btn-info btn-sm" href="/cats">Return to cats</a>
 
     <!-- Add Form -->
     @if (showAddForm)
     {
-        <div class="card mb-4 p-3 bg-light">
-            <h5>Add a new dish</h5>
-            <div class="mb-2">
-                <input class="form-control mb-2" placeholder="Brand" @bind="newDishBrand" />
-                <input class="form-control mb-2" placeholder="Flavor" @bind="newDishFlavor" />
-                <select class="form-select mb-2" @bind="newDishTasting">
-                    <option value="NotReviewed">Not Reviewed</option>
-                    <option value="Low">Low</option>
-                    <option value="Mid">Mid</option>
-                    <option value="High">High</option>
-                </select>
+        <Card Class="mb-4 bg-light">
+            <CardHeader>
+                <h5>Add a new dish</h5>
+            </CardHeader>
+            <CardBody>
+                <TextInput Placeholder="Brand" @bind-Value="newDishBrand" Class="mb-2" />
+                <TextInput Placeholder="Flavor" @bind-Value="newDishFlavor" Class="mb-2" />
 
-                <InputFile OnChange="OnAddImageSelected" class="form-control mb-2" />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Rating</label>
+                    <div class="d-flex gap-3">
+                        <InputRadioGroup @bind-Value="newDishTasting">
+                            <InputRadio Value="Tasting.NotReviewed" /> <span title="Not Reviewed">😶</span>
+                            <InputRadio Value="Tasting.Low" /> <span title="Low">😾</span>
+                            <InputRadio Value="Tasting.Mid" /> <span title="Mid">😐</span>
+                            <InputRadio Value="Tasting.High" /> <span title="High">😻</span>
+                        </InputRadioGroup>
+                    </div>
+                </div>
+
+                <InputFile OnChange="OnAddImageSelected" Class="form-control mb-3" />
                 @if (newDishImage is not null)
                 {
-                    <p>Selected: @newDishImage.Name</p>
+                    <div class="alert alert-info p-2">Selected: @newDishImage.Name</div>
                 }
 
-                <button class="btn btn-primary me-2" @onclick="AddDish">Save</button>
-                <button class="btn btn-secondary" @onclick="() => showAddForm = false">Cancel</button>
-            </div>
-        </div>
+                <div class="d-flex gap-2">
+                    <Button Color="ButtonColor.Success" @onclick="AddDish">
+                        <Icon Name="IconName.CheckLg" /> Save
+                    </Button>
+                    <Button Color="ButtonColor.Danger" @onclick="() => showAddForm = false">
+                        <Icon Name="IconName.XLg" /> Cancel
+                    </Button>
+                </div>
+            </CardBody>
+        </Card>
     }
 
     <!-- Dish List -->
     <h4>Dishes</h4>
     @if (dishes is null)
     {
-        <div class="alert alert-info">Loading dishes...</div>
+        <Alert Color="AlertColor.Info">Loading dishes...</Alert>
     }
     else if (dishes.Count == 0)
     {
-        <div class="alert alert-warning">No dishes found for this cat.</div>
+        <Alert Color="AlertColor.Warning">No dishes found for @cat.Name.</Alert>
     }
     else
     {
-        <ul class="list-group">
+        <div class="list-group">
             @foreach (var dish in dishes)
             {
-                <li class="list-group-item">
+                <div class="list-group-item d-flex justify-content-between align-items-center">
                     @if (editDishId == dish.Id)
                     {
                         <!-- Edit Form -->
-                        <div class="mb-2">
-                            <input class="form-control mb-2" @bind="editDishBrand" />
-                            <input class="form-control mb-2" @bind="editDishFlavor" />
-                            <select class="form-select mb-2" @bind="editDishTasting">
-                                <option value="NotReviewed">Not Reviewed</option>
-                                <option value="Low">Low</option>
-                                <option value="Mid">Mid</option>
-                                <option value="High">High</option>
-                            </select>
+                        <div class="w-100">
+                            <h6>Edit Dish</h6>
+                            <input class="form-control mb-2" placeholder="Brand" @bind="editDishBrand" />
+                            <input class="form-control mb-2" placeholder="Flavor" @bind="editDishFlavor" />
 
+                            <!-- RadioGroup für Rating -->
+                            <div class="d-flex gap-3 mb-2">
+                                <InputRadioGroup @bind-Value="editDishTasting">
+                                    <label class="me-2">
+                                        <InputRadio Value="Tasting.NotReviewed" /> 😶
+                                    </label>
+                                    <label class="me-2">
+                                        <InputRadio Value="Tasting.Low" /> 😾
+                                    </label>
+                                    <label class="me-2">
+                                        <InputRadio Value="Tasting.Mid" /> 😐
+                                    </label>
+                                    <label class="me-2">
+                                        <InputRadio Value="Tasting.High" /> 😻
+                                    </label>
+                                </InputRadioGroup>
+                            </div>
+
+                            <!-- Image Upload -->
                             <InputFile OnChange="OnEditImageSelected" class="form-control mb-2" />
                             @if (editDishImage is not null)
                             {
                                 <p>Selected: @editDishImage.Name</p>
                             }
+
+                            <!-- Buttons -->
+                            <div class="d-flex gap-2">
+                                <Button Color="ButtonColor.Success" Size="ButtonSize.Small" @onclick="() => SaveEdit(dish.Id)">
+                                    <Icon Name="IconName.CheckLg" /> Save
+                                </Button>
+                                <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="CancelEdit">
+                                    <Icon Name="IconName.XLg" /> Cancel
+                                </Button>
+                            </div>
                         </div>
-                        <button class="btn btn-primary btn-sm me-2" @onclick="() => SaveEdit(dish.Id)">Save</button>
-                        <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
                     }
                     else
                     {
                         <!-- Normal View -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>
-                                <strong>@dish.Brand</strong> – @dish.Flavor
-                            </span>
+                        <div class="d-flex align-items-center gap-3">
                             @if (!string.IsNullOrEmpty(dish.ImageUrl))
                             {
-                                <img src="@dish.ImageUrl" class="img-thumbnail me-2" style="max-height:100px;" />
+                                <img src="@dish.ImageUrl" class="img-thumbnail" style="width:60px; height:60px; object-fit:cover;" />
                             }
+
                             <div>
-                                <span class="badge bg-secondary me-2">@dish.Tasting</span>
-                                <button class="btn btn-primary btn-sm me-1" @onclick="() => StartEdit(dish)">Edit</button>
-                                <button class="btn btn-danger btn-sm" @onclick="async () => await DeleteDish(dish.Id)">Delete</button>
+                                <strong>@dish.Brand</strong> – @dish.Flavor
                             </div>
                         </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            @RenderTastingSmiley(dish.Tasting)
+
+                            <Button Color="ButtonColor.Primary" Size="ButtonSize.Small" @onclick="() => StartEdit(dish)">
+                                <Icon Name="IconName.PencilSquare" /> Edit
+                            </Button>
+                            <Button Color="ButtonColor.Danger" Size="ButtonSize.Small" @onclick="() => DeleteDish(dish.Id)">
+                                <Icon Name="IconName.Trash" /> Delete
+                            </Button>
+                        </div>
                     }
-                </li>
+                </div>
             }
-        </ul>
+        </div>
     }
+
+    <div style="position:fixed; bottom: 30px; left:50%; transform: translateX(-50%); z-index:1050">
+        <Button Color="ButtonColor.Info" Size="ButtonSize.Large" Class="rounded-circle" @onclick="ReturnToCats">
+            <Icon Name="IconName.ArrowLeftCircle" Color="IconColor.White"/>
+        </Button>
+    </div>
 }
 
 @code {
@@ -134,6 +182,24 @@ else
         {
             await Console.Error.WriteLineAsync($"Error loading dishes: {ex.Message}");
         }
+    }
+
+    private RenderFragment RenderTastingSmiley(Tasting tasting) => tasting switch
+    {
+        Tasting.Low => __builder => { __builder.AddContent(0, "😾"); }
+        ,
+        Tasting.Mid => __builder => { __builder.AddContent(0, "😐"); }
+        ,
+        Tasting.High => __builder => { __builder.AddContent(0, "😻"); }
+        ,
+        _ => __builder => { __builder.AddContent(0, "😶"); } // NotReviewed
+    };
+    #endregion
+
+    #region Navigation
+    private void ReturnToCats()
+    {
+        Navigation?.NavigateTo("/");
     }
     #endregion
 
