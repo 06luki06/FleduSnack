@@ -36,7 +36,13 @@ namespace At.Luki0606.FleduSnack.Server
                 ?? throw new InvalidOperationException("API Base URL is not configured."))
                 });
 
-            var app = builder.Build();
+            WebApplication app = builder.Build();
+
+            using (IServiceScope scope = app.Services.CreateScope())
+            {
+                AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                db.Database.Migrate();
+            }
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

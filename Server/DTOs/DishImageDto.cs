@@ -13,7 +13,7 @@ namespace At.Luki0606.FleduSnack.Server.DTOs
         public string Flavor { get; set; } = string.Empty;
 
         [Required]
-        public Tasting Tasting { get; set; }
+        public Tasting Tasting { get; set; } = Tasting.NotReviewed;
 
         public IFormFile? Image { get; set; }
     }
